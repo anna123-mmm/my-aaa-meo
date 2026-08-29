@@ -1,6 +1,5 @@
 import os
 import time
-
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -19,18 +18,20 @@ def run_registration(custom_password="Password123!"):
     driver = None
 
     try:
+        print("[+] BẮT ĐẦU TIẾN TRÌNH ĐĂNG KÝ...", flush=True)
         username, domain, full_email = generate_random_email()
-        print(f"[+] Tạo email mới: {full_email}")
+        print(f"[+] Tạo email mới: {full_email}", flush=True)
 
-        # 1. Bật màn hình ảo Xvfb chỉ khi chạy trên Linux (Streamlit Cloud Server)
         if os.name != "nt":
             from pyvirtualdisplay import Display
 
             display = Display(visible=0, size=(1920, 1080))
             display.start()
-            print("[+] Đã kích hoạt Virtual Display (Xvfb) trên Linux Server.")
+            print(
+                "[+] Đã kích hoạt Virtual Display (Xvfb) trên Linux Server.",
+                flush=True,
+            )
 
-        # 2. Cấu hình Chrome Options tối ưu bộ nhớ
         options = uc.ChromeOptions()
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
@@ -40,18 +41,16 @@ def run_registration(custom_password="Password123!"):
         options.add_argument("--start-maximized")
         options.add_argument("--disable-popup-blocking")
 
-        # 3. Phân chia đường dẫn khởi tạo theo môi trường
         if os.name == "nt":
-            # Local Windows: Ép dùng phiên bản khớp với Chrome máy nhà
             driver = uc.Chrome(options=options, version_main=151)
         else:
-            # Streamlit Cloud (Linux): Dùng đường dẫn Chromium được cài qua packages.txt
             driver = uc.Chrome(
                 options=options,
                 browser_executable_path="/usr/bin/chromium",
             )
 
         starnews_url = "https://member.starnewskorea.com/join/email"
+        print(f"[+] Đang truy cập: {starnews_url}", flush=True)
         driver.get(starnews_url)
 
         wait = WebDriverWait(driver, 15)
@@ -76,14 +75,14 @@ def run_registration(custom_password="Password123!"):
             )
         )
         btn_send_otp.click()
-        print("[+] Đã bấm gửi mã OTP.")
+        print("[+] Đã bấm gửi mã OTP.", flush=True)
 
         # Step 3: Đóng Popup Alert nếu xuất hiện
         try:
             wait.until(EC.alert_is_present())
             alert = driver.switch_to.alert
             alert.accept()
-            print("[+] Đã đóng popup thông báo.")
+            print("[+] Đã đóng popup thông báo.", flush=True)
         except Exception:
             pass
 
@@ -141,7 +140,7 @@ def run_registration(custom_password="Password123!"):
 
         # Step 9: Giải Turnstile Captcha nếu bị chuyển hướng sang Login
         if "login" in driver.current_url:
-            print("[+] Đang tiến hành giải Turnstile Captcha...")
+            print("[+] Đang tiến hành giải Turnstile Captcha...", flush=True)
             token = solve_cloudflare(driver.current_url, SITE_KEY_CLOUDFLARE)
             if token:
                 driver.execute_script(
@@ -149,15 +148,14 @@ def run_registration(custom_password="Password123!"):
                     f'="{token}";'
                 )
 
-        print(f"[+] Đăng ký thành công: {full_email}")
+        print(f"[+] Đăng ký thành công: {full_email}", flush=True)
         return full_email
 
     except Exception as e:
-        print(f"[-] Lỗi trong tiến trình đăng ký: {e}")
+        print(f"[-] Lỗi trong tiến trình đăng ký: {e}", flush=True)
         return None
 
     finally:
-        # Bắt buộc đóng Driver và giải phóng bộ nhớ Display
         time.sleep(2)
         if driver:
             try:
