@@ -16,8 +16,8 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy toàn bộ file hiện tại vào container (vì Root Directory đã được đặt đúng)
-COPY . /app/
+# Copy thư mục dự án vào môi trường Docker
+COPY auto_register_starnews/ /app/
 
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
