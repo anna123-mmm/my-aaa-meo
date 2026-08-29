@@ -1,12 +1,13 @@
 FROM python:3.10-slim
 
-# Cài đặt công cụ build và Google Chrome
+# Cài đặt công cụ build, xvfb và Google Chrome
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
     gnupg \
     unzip \
     build-essential \
+    xvfb \
     && mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/googlechrome.gpg \
     && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/googlechrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
@@ -16,7 +17,6 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy thư mục dự án vào môi trường Docker
 COPY auto_register_starnews/ /app/
 
 RUN pip install --no-cache-dir --upgrade pip

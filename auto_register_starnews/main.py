@@ -10,6 +10,9 @@ def run_registration(custom_password="Password123!"):
     username, domain, full_email = generate_random_email()
     print(f"[+] Tạo email mới: {full_email}")
 
+    display = Display(visible=0, size=(1920, 1080))
+    display.start()
+
     options = uc.ChromeOptions()
     options.add_argument("--start-maximized")
     options.add_argument("--disable-popup-blocking")
