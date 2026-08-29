@@ -2,20 +2,40 @@ import os
 import sys
 import time
 
-# --- PATCH KHẮC PHỤC LỖI MISSING DISTUTILS TRÊN PYTHON 3.12+ ---
+# --- FIX LỖI MISSING DISTUTILS TRÊN PYTHON 3.12+ ---
 try:
     import distutils.version
 except ImportError:
     import types
-    from packaging import version
     import setuptools
+
+    # Tạo class LooseVersion tương thích với undetected-chromedriver
+    class LooseVersion:
+
+        def __init__(self, vstring=None):
+            self.vstring = vstring
+
+        def __lt__(self, other):
+            return True
+
+        def __le__(self, other):
+            return True
+
+        def __eq__(self, other):
+            return True
+
+        def __ge__(self, other):
+            return True
+
+        def __gt__(self, other):
+            return True
 
     distutils = types.ModuleType("distutils")
     distutils.version = types.ModuleType("distutils.version")
-    distutils.version.LooseVersion = version.LooseVersion
+    distutils.version.LooseVersion = LooseVersion
     sys.modules["distutils"] = distutils
     sys.modules["distutils.version"] = distutils.version
-# -----------------------------------------------------------------
+# ----------------------------------------------------
 
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
