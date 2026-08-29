@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
@@ -13,6 +14,27 @@ from email_captcha_api import (
 )
 
 
+def find_chrome_binary():
+    """Tự động tìm kiếm vị trí thực thi của Chrome/Chromium trên hệ thống Linux"""
+    possible_paths = [
+        "/usr/bin/chromium",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/google-chrome",
+        "/usr/bin/google-chrome-stable",
+    ]
+    for path in possible_paths:
+        if os.path.exists(path):
+            return path
+
+    # Tìm thông qua PATH môi trường
+    for cmd in ["chromium", "chromium-browser", "google-chrome"]:
+        found_path = shutil.which(cmd)
+        if found_path:
+            return found_path
+
+    return None
+
+
 def run_registration(custom_password="Password123!"):
     driver = None
 
@@ -23,8 +45,6 @@ def run_registration(custom_password="Password123!"):
 
         # Cấu hình Chrome Options
         options = uc.ChromeOptions()
-        
-        # Cấu hình Chạy Headless chuẩn cho môi trường Server (Render / Streamlit Cloud)
         options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
@@ -33,21 +53,22 @@ def run_registration(custom_password="Password123!"):
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--remote-debugging-port=9222")
         options.add_argument("--disable-popup-blocking")
-        
-        # Giả lập User-Agent của máy tính thật để tránh bị Cloudflare chặn do dùng Headless
         options.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
 
-        # Phân chia đường dẫn thực thi Chrome theo môi trường OS
+        # Cấu hình đường dẫn Chrome theo môi trường OS
         if os.name == "nt":
             driver = uc.Chrome(options=options, version_main=151)
         else:
-            driver = uc.Chrome(
-                options=options,
-                browser_executable_path="/usr/bin/chromium",
-            )
+            chrome_bin = find_chrome_binary()
+            if chrome_bin:
+                print(f"[+] Đã tìm thấy binary Chromium tại: {chrome_bin}", flush=True)
+                driver = uc.Chrome(options=options, browser_executable_path=chrome_bin)
+            else:
+                print("[+] Không chỉ định binary path, để undetected_chromedriver tự khởi tạo...", flush=True)
+                driver = uc.Chrome(options=options)
 
         starnews_url = "https://member.starnewskorea.com/join/email"
         print(f"[+] Đang truy cập: {starnews_url}", flush=True)
