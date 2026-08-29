@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Cài đặt công cụ build, xvfb và Google Chrome
+# Cài đặt các công cụ build, màn hình ảo Xvfb và Google Chrome Stable
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
+# Copy toàn bộ file dự án vào container
 COPY auto_register_starnews/ /app/
 
 RUN pip install --no-cache-dir --upgrade pip
