@@ -14,7 +14,6 @@ from email_captcha_api import (
 
 
 def run_registration(custom_password="Password123!"):
-    display = None
     driver = None
 
     try:
@@ -22,25 +21,26 @@ def run_registration(custom_password="Password123!"):
         username, domain, full_email = generate_random_email()
         print(f"[+] Tạo email mới: {full_email}", flush=True)
 
-        if os.name != "nt":
-            from pyvirtualdisplay import Display
-
-            display = Display(visible=0, size=(1920, 1080))
-            display.start()
-            print(
-                "[+] Đã kích hoạt Virtual Display (Xvfb) trên Linux Server.",
-                flush=True,
-            )
-
+        # Cấu hình Chrome Options
         options = uc.ChromeOptions()
+        
+        # Cấu hình Chạy Headless chuẩn cho môi trường Server (Render / Streamlit Cloud)
+        options.add_argument("--headless=new")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--disable-setuid-sandbox")
+        options.add_argument("--window-size=1920,1080")
         options.add_argument("--remote-debugging-port=9222")
-        options.add_argument("--start-maximized")
         options.add_argument("--disable-popup-blocking")
+        
+        # Giả lập User-Agent của máy tính thật để tránh bị Cloudflare chặn do dùng Headless
+        options.add_argument(
+            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
 
+        # Phân chia đường dẫn thực thi Chrome theo môi trường OS
         if os.name == "nt":
             driver = uc.Chrome(options=options, version_main=151)
         else:
@@ -121,8 +121,7 @@ def run_registration(custom_password="Password123!"):
             EC.presence_of_element_located(
                 (
                     By.XPATH,
-                    "//*[contains(text(), '모두 동의') or contains(text(),"
-                    " '모두동의')]",
+                    "//*[contains(text(), '모두 동의') or contains(text(), '모두동의')]",
                 )
             )
         )
@@ -160,10 +159,5 @@ def run_registration(custom_password="Password123!"):
         if driver:
             try:
                 driver.quit()
-            except Exception:
-                pass
-        if display:
-            try:
-                display.stop()
             except Exception:
                 pass
