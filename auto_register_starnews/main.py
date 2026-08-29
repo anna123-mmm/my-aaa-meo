@@ -1,5 +1,22 @@
 import os
+import sys
 import time
+
+# --- PATCH KHẮC PHỤC LỖI MISSING DISTUTILS TRÊN PYTHON 3.12+ ---
+try:
+    import distutils.version
+except ImportError:
+    import types
+    from packaging import version
+    import setuptools
+
+    distutils = types.ModuleType("distutils")
+    distutils.version = types.ModuleType("distutils.version")
+    distutils.version.LooseVersion = version.LooseVersion
+    sys.modules["distutils"] = distutils
+    sys.modules["distutils.version"] = distutils.version
+# -----------------------------------------------------------------
+
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -21,7 +38,7 @@ def run_registration(custom_password="Password123!"):
         username, domain, full_email = generate_random_email()
         print(f"[+] Tạo email mới: {full_email}")
 
-        # 1. Bật màn hình ảo Xvfb chỉ khi chạy trên Linux (Render Docker)
+        # 1. Bật màn hình ảo Xvfb chỉ khi chạy trên Linux (Streamlit Cloud Server)
         if os.name != "nt":
             from pyvirtualdisplay import Display
 
@@ -29,7 +46,7 @@ def run_registration(custom_password="Password123!"):
             display.start()
             print("[+] Đã kích hoạt Virtual Display (Xvfb) trên Linux Server.")
 
-        # 2. Cấu hình Chrome Options tối ưu chống crash Docker
+        # 2. Cấu hình Chrome Options tối ưu bộ nhớ
         options = uc.ChromeOptions()
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
@@ -44,10 +61,10 @@ def run_registration(custom_password="Password123!"):
             # Local Windows: Ép dùng phiên bản khớp với Chrome máy nhà
             driver = uc.Chrome(options=options, version_main=151)
         else:
-            # Render Linux: Chỉ định Chrome do Docker cài đặt, uc tự lấy driver tương thích
+            # Streamlit Cloud (Linux): Dùng đường dẫn Chromium được cài qua packages.txt
             driver = uc.Chrome(
                 options=options,
-                browser_executable_path="/usr/bin/google-chrome-stable",
+                browser_executable_path="/usr/bin/chromium",
             )
 
         starnews_url = "https://member.starnewskorea.com/join/email"
@@ -156,7 +173,7 @@ def run_registration(custom_password="Password123!"):
         return None
 
     finally:
-        # Bắt buộc đóng Driver và giải phóng bộ nhớ Display để tránh nghẽn WebSocket/RAM
+        # Bắt buộc đóng Driver và giải phóng bộ nhớ Display
         time.sleep(2)
         if driver:
             try:
