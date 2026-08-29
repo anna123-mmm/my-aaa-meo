@@ -1,28 +1,27 @@
 FROM python:3.10-slim
 
-# Cài đặt các công cụ build, màn hình ảo Xvfb và Google Chrome Stable
+# Cài đặt đầy đủ các thư viện hệ thống Linux, Chromium và ChromeDriver
 RUN apt-get update && apt-get install -y \
-    wget \
-    curl \
-    gnupg \
-    unzip \
-    build-essential \
+    chromium \
+    chromium-driver \
     xvfb \
-    && mkdir -p /etc/apt/keyrings \
-    && curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/googlechrome.gpg \
-    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/googlechrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update \
-    && apt-get install -y google-chrome-stable \
+    libglib2.0-0 \
+    libnss3 \
+    libgconf-2-4 \
+    libfontconfig1 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy toàn bộ file dự án vào container
-COPY auto_register_starnews/ /app/
-
-RUN pip install --no-cache-dir --upgrade pip
+# Copy dependencies và cài đặt
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy toàn bộ mã nguồn vào container
+COPY . .
+
+# Expose port mặc định của Streamlit
 EXPOSE 8501
 
+# Lệnh chạy ứng dụng
 CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
