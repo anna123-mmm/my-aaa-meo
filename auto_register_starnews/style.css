@@ -1,0 +1,91 @@
+/* Background mặc định toàn bộ trang web (Màu trắng) */
+.stApp {
+    background-color: #FFFFFF !important;
+}
+
+/* Thanh Sidebar */
+[data-testid="stSidebar"] {
+    background-color: #FFE4E8;
+    border-right: 2px solid #FFB6C1;
+}
+
+/* Khung Form Đăng Nhập màu trắng */
+[data-testid="stForm"] {
+    background-color: #FFFFFF !important;
+    border-radius: 20px !important;
+    border: 2px solid #FFB6C1 !important;
+    padding: 30px !important;
+    box-shadow: 0px 8px 20px rgba(255, 182, 193, 0.4) !important;
+}
+
+/* Đổi màu nút Đăng nhập trong Form */
+[data-testid="stForm"] button {
+    background-color: #FF8DA1 !important;
+    color: white !important;
+    border-radius: 12px !important;
+    border: none !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease !important;
+}
+
+[data-testid="stForm"] button:hover {
+    background-color: #FF6B8B !important;
+    transform: scale(1.02) !important;
+}
+
+/* Tất cả các nút bấm cơ bản bên ngoài */
+.stButton>button {
+    background-color: #FF8DA1 !important;
+    color: white !important;
+    border-radius: 20px !important;
+    border: none !important;
+    font-weight: bold !important;
+    box-shadow: 0px 4px 10px rgba(255, 141, 161, 0.4);
+    transition: all 0.3s ease;
+}
+
+.stButton>button:hover {
+    background-color: #FF6B8B !important;
+    transform: scale(1.03);
+}
+
+/* Nút Tải xuống CSV */
+.stDownloadButton>button {
+    background-color: #F8F9FA !important;
+    color: #5A2A35 !important;
+    border-radius: 20px !important;
+    border: 2px solid #FFB6C1 !important;
+    font-weight: bold !important;
+}
+
+.stDownloadButton>button:hover {
+    background-color: #FF8DA1 !important;
+    color: white !important;
+}
+
+/* Ô nhập liệu Text Input & Chat Input */
+.stTextInput input, .stChatInput input {
+    border-radius: 15px !important;
+    border: 2px solid #FFB6C1 !important;
+    background-color: #FFFFFF !important;
+}
+
+/* Thanh Tiến Trình Progress Bar */
+.stProgress > div > div > div > div {
+    background-color: #FF6B8B !important;
+}
+
+/* Khung tin nhắn Chatbot */
+[data-testid="stChatMessage"] {
+    background-color: #FFFFFF !important;
+    border-radius: 15px !important;
+    border: 1px solid #FFE4E8 !important;
+    box-shadow: 0px 2px 8px rgba(255, 182, 193, 0.2);
+}
+
+/* Các tiêu đề H1, H2, H3 */
+h1, h2, h3 {
+    color: #D81B60 !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
