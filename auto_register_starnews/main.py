@@ -2,9 +2,12 @@ import os
 import shutil
 import time
 import undetected_chromedriver as uc
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
 
 from config import SITE_KEY_CLOUDFLARE
 from email_captcha_api import (
@@ -15,7 +18,7 @@ from email_captcha_api import (
 
 
 def find_chrome_binary():
-    """Tự động tìm kiếm vị trí thực thi của Chrome/Chromium trên hệ thống Linux"""
+    """Tìm đường dẫn thực thi của Chrome/Chromium trên hệ thống"""
     possible_paths = [
         "/usr/bin/chromium",
         "/usr/bin/chromium-browser",
@@ -26,7 +29,6 @@ def find_chrome_binary():
         if os.path.exists(path):
             return path
 
-    # Tìm thông qua PATH môi trường
     for cmd in ["chromium", "chromium-browser", "google-chrome"]:
         found_path = shutil.which(cmd)
         if found_path:
@@ -43,32 +45,46 @@ def run_registration(custom_password="Password123!"):
         username, domain, full_email = generate_random_email()
         print(f"[+] Tạo email mới: {full_email}", flush=True)
 
-        # Cấu hình Chrome Options
-        options = uc.ChromeOptions()
-        options.add_argument("--headless=new")
-        options.add_argument("--no-sandbox")
-        options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("--disable-gpu")
-        options.add_argument("--disable-setuid-sandbox")
-        options.add_argument("--window-size=1920,1080")
-        options.add_argument("--remote-debugging-port=9222")
-        options.add_argument("--disable-popup-blocking")
-        options.add_argument(
-            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        )
+        chrome_bin = find_chrome_binary()
 
-        # Cấu hình đường dẫn Chrome theo môi trường OS
+        # TH1: Máy Windows local
         if os.name == "nt":
+            options = uc.ChromeOptions()
+            options.add_argument("--headless=new")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
             driver = uc.Chrome(options=options, version_main=151)
+
+        # TH2: Server Linux có cài Chromium sẵn
+        elif chrome_bin:
+            print(f"[+] Đã tìm thấy Chromium tại: {chrome_bin}", flush=True)
+            options = uc.ChromeOptions()
+            options.add_argument("--headless=new")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--window-size=1920,1080")
+            driver = uc.Chrome(options=options, browser_executable_path=chrome_bin)
+
+        # TH3: Server Linux không có Chromium -> Dùng Selenium Webdriver tiêu chuẩn với ChromeDriverManager
         else:
-            chrome_bin = find_chrome_binary()
-            if chrome_bin:
-                print(f"[+] Đã tìm thấy binary Chromium tại: {chrome_bin}", flush=True)
-                driver = uc.Chrome(options=options, browser_executable_path=chrome_bin)
-            else:
-                print("[+] Không chỉ định binary path, để undetected_chromedriver tự khởi tạo...", flush=True)
-                driver = uc.Chrome(options=options)
+            print(
+                "[+] Không tìm thấy Chromium hệ thống, chuyển sang dùng Selenium Driver tiêu chuẩn...",
+                flush=True,
+            )
+            options = webdriver.ChromeOptions()
+            options.add_argument("--headless=new")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--window-size=1920,1080")
+            options.add_argument(
+                "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            )
+
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=options)
 
         starnews_url = "https://member.starnewskorea.com/join/email"
         print(f"[+] Đang truy cập: {starnews_url}", flush=True)
