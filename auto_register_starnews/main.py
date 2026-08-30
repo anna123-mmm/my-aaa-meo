@@ -182,7 +182,7 @@ def run_registration(custom_password="Password123!"):
     )
     time.sleep(3)  # Chờ 3 giây để Cloudflare tự nhận diện môi trường sạch
 
-   # Step 9: Bấm nút Hoàn tất đăng ký (Hỗ trợ nhiều XPATH & click JS để tránh Timeout)
+    # Step 9: Bấm nút Hoàn tất đăng ký (Hỗ trợ nhiều XPATH & click JS để tránh Timeout)
     print("[+] Đang bấm hoàn tất đăng ký...", flush=True)
     try:
       # Thử các XPATH phổ biến cho nút đăng ký hoàn tất
@@ -218,10 +218,12 @@ def run_registration(custom_password="Password123!"):
     while time.time() - start_wait < 12:
       current_url = driver.current_url
 
-      # Bắt trang Đăng nhập hoặc trang Hoàn tất đăng ký (일반 회원가입 완료)
-      if any(
-          k in current_url for k in ["login", "complete", "success", "result"]
-      ) or "완료" in driver.page_source:
+      # Chỉ chấp nhận thành công khi thực sự xuất hiện trang hoặc thông báo HOÀN TẤT đăng ký (회원가입 완료)
+      if (
+          any(k in current_url for k in ["complete", "success", "result"])
+          or "회원가입 완료" in driver.page_source
+          or "가입이 완료" in driver.page_source
+      ):
         success = True
         print(
             "[+] Đã phát hiện trang Đăng ký thành công (일반 회원가입"
@@ -244,10 +246,11 @@ def run_registration(custom_password="Password123!"):
 
       time.sleep(1)
 
-    # Nếu sau 12 giây vẫn ở trang form đăng ký (join) -> Báo lỗi
-    if not success and "join" in driver.current_url:
+    # Nếu không tới trang Đăng ký thành công -> Báo lỗi thực tế
+    if not success:
       raise Exception(
-          "Đăng ký thất bại! Server không chuyển trang (Bị kẹt tại form)."
+          "Đăng ký thất bại! Server không tạo được tài khoản (Bị kẹt tại form"
+          " hoặc đẩy về trang Login do chưa pass Captcha)."
       )
 
     print(
