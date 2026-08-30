@@ -29,32 +29,27 @@ def run_registration(custom_password="Password123!"):
             display.start()
             print("[+] Đã kích hoạt Virtual Display (Xvfb) trên Linux Server.")
 
-        # 2. Cấu hình Chrome Options tối ưu chống crash Docker
+       # 2. Cấu hình Chrome Options
         options = uc.ChromeOptions()
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
-        options.add_argument("--disable-setuid-sandbox")
-        options.add_argument("--remote-debugging-port=9222")
+        options.add_argument("--window-size=1920,1080")
         options.add_argument("--start-maximized")
-        options.add_argument("--disable-popup-blocking")
 
-    # 3. Phân chia đường dẫn khởi tạo theo môi trường
+        # 3. Khởi tạo Driver chuẩn cho từng hệ điều hành
         if os.name == "nt":
-          # Local Windows: Ép dùng phiên bản khớp với Chrome máy nhà
-          driver = uc.Chrome(options=options, version_main=151)
+            driver = uc.Chrome(options=options, version_main=151)
         else:
-          # Railway Linux: Trỏ chính xác đến Chromium và ChromeDriver trong Docker
-          driver = uc.Chrome(
-              options=options,
-              browser_executable_path="/usr/bin/chromium",
-              driver_executable_path="/usr/bin/chromedriver",
-          )
+            # Dành cho Railway Linux: Để undetected_chromedriver tự tải/kết nối webdriver tương thích
+            options.binary_location = "/usr/bin/chromium"
+            driver = uc.Chrome(options=options, driver_executable_path="/usr/bin/chromedriver")
+
+        print("[+] Khởi tạo Chrome thành công! Đang truy cập trang web...", flush=True)
 
         starnews_url = "https://member.starnewskorea.com/join/email"
         driver.get(starnews_url)
-
-        wait = WebDriverWait(driver, 15)
+        print("[+] Đã tải xong trang web!", flush=True)
 
         # Step 1: Nhập Email
         email_input = wait.until(
