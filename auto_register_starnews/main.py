@@ -39,16 +39,17 @@ def run_registration(custom_password="Password123!"):
         options.add_argument("--start-maximized")
         options.add_argument("--disable-popup-blocking")
 
-        # 3. Phân chia đường dẫn khởi tạo theo môi trường
+    # 3. Phân chia đường dẫn khởi tạo theo môi trường
         if os.name == "nt":
-            # Local Windows: Ép dùng phiên bản khớp với Chrome máy nhà
-            driver = uc.Chrome(options=options, version_main=151)
+          # Local Windows: Ép dùng phiên bản khớp với Chrome máy nhà
+          driver = uc.Chrome(options=options, version_main=151)
         else:
-            # Render Linux: Chỉ định Chrome do Docker cài đặt, uc tự lấy driver tương thích
-            driver = uc.Chrome(
-                options=options,
-                browser_executable_path="/usr/bin/google-chrome-stable",
-            )
+          # Railway Linux: Trỏ chính xác đến Chromium và ChromeDriver trong Docker
+          driver = uc.Chrome(
+              options=options,
+              browser_executable_path="/usr/bin/chromium",
+              driver_executable_path="/usr/bin/chromedriver",
+          )
 
         starnews_url = "https://member.starnewskorea.com/join/email"
         driver.get(starnews_url)
