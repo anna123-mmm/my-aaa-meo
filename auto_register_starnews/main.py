@@ -5,12 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from config import SITE_KEY_CLOUDFLARE
-from email_captcha_api import (
-    fetch_otp_from_api,
-    generate_random_email,
-    solve_cloudflare,
-)
+from email_captcha_api import fetch_otp_from_api, generate_random_email
 
 
 def run_registration(custom_password="Password123!"):
@@ -20,19 +15,30 @@ def run_registration(custom_password="Password123!"):
     username, domain, full_email = generate_random_email()
     print(f"[+] Tạo email mới: {full_email}", flush=True)
 
-    # 1. Cấu hình undetected-chromedriver để bypass Cloudflare
+    # 1. Cấu hình undetected-chromedriver ngụy trang Chrome thật (Chống Cloudflare phát hiện)
     options = uc.ChromeOptions()
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
     options.add_argument("--disable-gpu")
     options.add_argument("--window-size=1920,1080")
+    options.add_argument("--start-maximized")
     options.add_argument("--disable-popup-blocking")
 
-    # Giả lập User-Agent Windows chuẩn
+    # Giả lập User-Agent Windows chuẩn của Chrome thật
     options.add_argument(
         "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
     )
+
+    # Giả lập đồ họa WebGL để vượt qua Browser Fingerprinting
+    options.add_argument("--enable-webgl")
+    options.add_argument("--use-gl=swiftshader")
+    options.add_argument("--enable-unsafe-swiftshader")
+
+    # Tắt các cờ báo hiệu Selenium/Automation
+    options.add_argument("--disable-blink-features=AutomationControlled")
+    options.add_argument("--ignore-certificate-errors")
+    options.add_argument("--allow-running-insecure-content")
 
     # Chạy ẩn (Headless) nếu trên server Linux
     is_headless = os.name != "nt"
@@ -41,8 +47,23 @@ def run_registration(custom_password="Password123!"):
           "[+] Đang chạy ở chế độ Chrome Headless (Linux Server).", flush=True
       )
 
-    # Khởi tạo Undetected Driver
-    driver = uc.Chrome(options=options, headless=is_headless, version_main=151)    
+    # Khởi tạo Undetected Driver với cơ chế tự động xử lý lệch phiên bản Chrome (151 / 152)
+    try:
+      driver = uc.Chrome(options=options, headless=is_headless)
+    except Exception as err:
+      err_str = str(err)
+      if "version" in err_str.lower() or "151" in err_str:
+        print(
+            "[!] Lệch version trình duyệt trên Server, ép dùng driver"
+            " version_main=151...",
+            flush=True,
+        )
+        driver = uc.Chrome(
+            options=options, headless=is_headless, version_main=151
+        )
+      else:
+        raise err
+
     print(
         "[+] Khởi tạo Chrome (Undetected) thành công! Đang truy cập trang"
         " web...",
@@ -154,32 +175,14 @@ def run_registration(custom_password="Password123!"):
     print("[+] Đã tích chọn đồng ý điều khoản.", flush=True)
     time.sleep(1)
 
-    # Step 8: Giải Cloudflare Turnstile trước khi submit
-    print("[+] Tiến hành kiểm tra và giải Cloudflare Turnstile...", flush=True)
-    try:
-      token = solve_cloudflare(driver.current_url, SITE_KEY_CLOUDFLARE)
-      if token:
-        print("[+] Giải Cloudflare thành công, đang inject token...", flush=True)
-        # Inject Token vào thẻ input ẩn
-        driver.execute_script(
-            f'document.querySelector("[name=cf-turnstile-response]").value="{token}";'
-        )
-        # Thực thi callback nếu có để Cloudflare chấp nhận kết quả
-        driver.execute_script("""
-                    if (window.cfCallback) { window.cfCallback(); }
-                    else if (typeof turnstile !== 'undefined' && turnstile.callback) {
-                        turnstile.callback();
-                    }
-                """)
-        time.sleep(2)
-    except Exception as cf_err:
-      print(
-          f"[-] Cảnh báo khi giải Cloudflare: {cf_err}. Tiếp tục thử đăng"
-          " ký...",
-          flush=True,
-      )
+    # Step 8: Chờ Cloudflare Turnstile tự động xác thực (Ngụy trang trình duyệt sạch)
+    print(
+        "[+] Tiến hành kiểm tra và chờ Cloudflare Turnstile tự xác thực...",
+        flush=True,
+    )
+    time.sleep(3)  # Chờ 3 giây để Cloudflare tự nhận diện môi trường sạch
 
-    # Step 9: Bấm nút Hoàn tất đăng ký & Kiểm tra chuyển trang
+    # Step 9: Bấm nút Hoàn tất đăng ký
     print("[+] Đang bấm hoàn tất đăng ký...", flush=True)
     btn_submit = wait.until(
         EC.element_to_be_clickable(
@@ -198,7 +201,7 @@ def run_registration(custom_password="Password123!"):
     while time.time() - start_wait < 12:
       current_url = driver.current_url
 
-      # Bắt cả trang Đăng nhập (login) lẫn trang Hoàn tất đăng ký (complete / success / join_ok / result)
+      # Bắt trang Đăng nhập hoặc trang Hoàn tất đăng ký (일반 회원가입 완료)
       if any(
           k in current_url for k in ["login", "complete", "success", "result"]
       ) or "완료" in driver.page_source:
@@ -241,7 +244,7 @@ def run_registration(custom_password="Password123!"):
         f"[-] Lỗi trong tiến trình đăng ký ({type(e).__name__}): {e}",
         flush=True,
     )
-    raise e  # Bắt buộc raise lỗi để app.py nhận biết và ghi đúng trạng thái lỗi vào bảng
+    raise e
 
   finally:
     time.sleep(1)
