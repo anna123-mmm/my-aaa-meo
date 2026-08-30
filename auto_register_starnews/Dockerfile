@@ -22,4 +22,4 @@ ENV PORT=8501
 EXPOSE 8501
 
 # Lấy cổng $PORT tự động của Railway và chạy app.py
-CMD xvfb-run --auto-servernum --server-args="-screen 0 1920x1080x24" streamlit run app.py --server.port=${PORT:-8501} --server.address=0.0.0.0
+CMD ["sh", "-c", "xvfb-run --auto-servernum streamlit run app.py --server.port=${PORT:-8501} --server.address=0.0.0.0 --server.headless=true"]
