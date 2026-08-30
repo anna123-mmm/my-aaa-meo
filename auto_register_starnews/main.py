@@ -38,8 +38,12 @@ def run_registration(custom_password="Password123!"):
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--start-maximized")
         options.add_argument("--disable-popup-blocking")
-        
-        # Ẩn cờ tự động hóa (Antidetect Selenium)
+
+        # 🟢 GIẢ LẬP TRÌNH DUYỆT WINDOWS THẬT ĐỂ TRÁNH BỊ CHẶN LINUX/CLOUD IP
+        options.add_argument(
+            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+        )
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option("useAutomationExtension", False)
@@ -58,7 +62,14 @@ def run_registration(custom_password="Password123!"):
         driver.get(starnews_url)
         print("[+] Đã tải xong trang web!", flush=True)
 
-        # KHỞI TẠO BIẾN WAIT TẠI ĐÂY (Sửa lỗi NameError)
+        # 🟢 CHỤP ẢNH DEBUG ĐỂ KIỂM TRA XEM MÀN HÌNH CÓ BỊ CHẶN CLOUDFLARE HAY KHÔNG
+        try:
+            driver.save_screenshot("debug_page.png")
+            print("[+] Đã lưu ảnh debug màn hình (debug_page.png).", flush=True)
+        except Exception:
+            pass
+
+        # Khởi tạo bộ chờ WebDriverWait
         wait = WebDriverWait(driver, 15)
 
         # Step 1: Nhập Email
