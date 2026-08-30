@@ -12,22 +12,21 @@ st.set_page_config(page_title="Ráng tạo meo nha", layout="wide")
 
 if not check_login():
     st.stop()
-CSV_FILE = "accounts.csv"
 
 # Khởi tạo cờ dừng tiến trình trong session_state
 if "stop_processing" not in st.session_state:
     st.session_state.stop_processing = False
 
-# Khởi tạo file CSV nếu chưa tồn tại
-if not os.path.exists(CSV_FILE):
-    df_init = pd.DataFrame(columns=["STT", "Email", "Password", "Thời gian tạo", "Trạng thái"])
-    df_init.to_csv(CSV_FILE, index=False)
-
+if "user_accounts" not in st.session_state:
+  st.session_state.user_accounts = pd.DataFrame(
+      columns=["STT", "Email", "Password", "Thời gian tạo", "Trạng thái"]
+  )
 def load_accounts():
-    return pd.read_csv(CSV_FILE)
+    return st.session_state.user_accounts
 
 def save_account(email, password, status="Thành công"):
-    df = load_accounts()
+    """Lưu dữ liệu vào bộ nhớ riêng của tab này"""
+    df = st.session_state.user_accounts
     new_id = len(df) + 1
     new_row = {
         "STT": new_id,
@@ -36,8 +35,7 @@ def save_account(email, password, status="Thành công"):
         "Thời gian tạo": time.strftime("%Y-%m-%d %H:%M:%S"),
         "Trạng thái": status
     }
-    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-    df.to_csv(CSV_FILE, index=False)
+    st.session_state.user_accounts = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
 
 # ==========================================
 # THANH SIDEBAR: CHECK 2CAPTCHA
@@ -96,8 +94,8 @@ with col_right:
         
     with btn_col2:
         if st.button("Xóa bảng", type="primary", key="static_reset_btn", width="stretch"):
-            df_empty = pd.DataFrame(columns=["STT", "Email", "Password", "Thời gian tạo", "Trạng thái"])
-            df_empty.to_csv(CSV_FILE, index=False)
+            # Reset lại dữ liệu của riêng tab này
+            st.session_state.user_accounts = pd.DataFrame(columns=["STT", "Email", "Password", "Thời gian tạo", "Trạng thái"])
             st.toast("Đã làm sạch dữ liệu cũ!")
             time.sleep(0.3)
             st.rerun()
