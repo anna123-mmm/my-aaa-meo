@@ -42,7 +42,7 @@ def run_registration(custom_password="Password123!"):
       )
 
     # Khởi tạo Undetected Driver
-    driver = uc.Chrome(options=options, headless=is_headless)
+    driver = uc.Chrome(options=options, headless=is_headless, version_main=151)    
     print(
         "[+] Khởi tạo Chrome (Undetected) thành công! Đang truy cập trang"
         " web...",
