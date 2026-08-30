@@ -182,16 +182,33 @@ def run_registration(custom_password="Password123!"):
     )
     time.sleep(3)  # Chờ 3 giây để Cloudflare tự nhận diện môi trường sạch
 
-    # Step 9: Bấm nút Hoàn tất đăng ký
+   # Step 9: Bấm nút Hoàn tất đăng ký (Hỗ trợ nhiều XPATH & click JS để tránh Timeout)
     print("[+] Đang bấm hoàn tất đăng ký...", flush=True)
-    btn_submit = wait.until(
-        EC.element_to_be_clickable(
-            (By.XPATH, "//button[contains(text(), '가입완료')]")
-        )
-    )
-    driver.execute_script("arguments[0].scrollIntoView(true);", btn_submit)
-    time.sleep(1)
-    driver.execute_script("arguments[0].click();", btn_submit)
+    try:
+      # Thử các XPATH phổ biến cho nút đăng ký hoàn tất
+      btn_submit = wait.until(
+          EC.presence_of_element_located((
+              By.XPATH,
+              "//button[contains(text(), '가입완료')] |"
+              " //button[contains(text(), '회원가입')] | //button[@type='submit']"
+              " | //a[contains(text(), '가입완료')]",
+          ))
+      )
+      driver.execute_script("arguments[0].scrollIntoView(true);", btn_submit)
+      time.sleep(1)
+      driver.execute_script("arguments[0].click();", btn_submit)
+    except Exception as submit_err:
+      print(
+          f"[-] Không tìm thấy nút bằng WebDriverWait, thử click bằng JS tất cả"
+          f" submit button: {submit_err}",
+          flush=True,
+      )
+      # Fallback: Click vào button type submit bất kỳ trên form
+      submits = driver.find_elements(
+          By.XPATH, "//button[@type='submit'] | //button"
+      )
+      if submits:
+        driver.execute_script("arguments[0].click();", submits[-1])
 
     # Step 10: Kiểm tra xác nhận từ Server & Chuyển hướng
     print("[+] Đang chờ kiểm tra kết quả phản hồi từ Server...", flush=True)
