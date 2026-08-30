@@ -1,6 +1,7 @@
 import os
 import time
-import undetected_chromedriver as uc
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,37 +20,46 @@ def run_registration(custom_password="Password123!"):
 
     try:
         username, domain, full_email = generate_random_email()
-        print(f"[+] Tạo email mới: {full_email}")
+        print(f"[+] Tạo email mới: {full_email}", flush=True)
 
-        # 1. Bật màn hình ảo Xvfb chỉ khi chạy trên Linux (Render Docker)
+        # 1. Bật màn hình ảo Xvfb chỉ khi chạy trên Linux Server
         if os.name != "nt":
             from pyvirtualdisplay import Display
 
             display = Display(visible=0, size=(1920, 1080))
             display.start()
-            print("[+] Đã kích hoạt Virtual Display (Xvfb) trên Linux Server.")
+            print("[+] Đã kích hoạt Virtual Display (Xvfb) trên Linux Server.", flush=True)
 
-       # 2. Cấu hình Chrome Options
-        options = uc.ChromeOptions()
+        # 2. Cấu hình Chrome Options
+        options = webdriver.ChromeOptions()
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--disable-gpu")
         options.add_argument("--window-size=1920,1080")
         options.add_argument("--start-maximized")
+        options.add_argument("--disable-popup-blocking")
+        
+        # Ẩn cờ tự động hóa (Antidetect Selenium)
+        options.add_argument("--disable-blink-features=AutomationControlled")
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option("useAutomationExtension", False)
 
-        # 3. Khởi tạo Driver chuẩn cho từng hệ điều hành
+        # 3. Khởi tạo Driver cho Windows (Local) và Linux (Server)
         if os.name == "nt":
-            driver = uc.Chrome(options=options, version_main=151)
+            driver = webdriver.Chrome(options=options)
         else:
-            # Dành cho Railway Linux: Để undetected_chromedriver tự tải/kết nối webdriver tương thích
             options.binary_location = "/usr/bin/chromium"
-            driver = uc.Chrome(options=options, driver_executable_path="/usr/bin/chromedriver")
+            service = Service("/usr/bin/chromedriver")
+            driver = webdriver.Chrome(service=service, options=options)
 
         print("[+] Khởi tạo Chrome thành công! Đang truy cập trang web...", flush=True)
 
         starnews_url = "https://member.starnewskorea.com/join/email"
         driver.get(starnews_url)
         print("[+] Đã tải xong trang web!", flush=True)
+
+        # KHỞI TẠO BIẾN WAIT TẠI ĐÂY (Sửa lỗi NameError)
+        wait = WebDriverWait(driver, 15)
 
         # Step 1: Nhập Email
         email_input = wait.until(
@@ -71,14 +81,14 @@ def run_registration(custom_password="Password123!"):
             )
         )
         btn_send_otp.click()
-        print("[+] Đã bấm gửi mã OTP.")
+        print("[+] Đã bấm gửi mã OTP.", flush=True)
 
         # Step 3: Đóng Popup Alert nếu xuất hiện
         try:
             wait.until(EC.alert_is_present())
             alert = driver.switch_to.alert
             alert.accept()
-            print("[+] Đã đóng popup thông báo.")
+            print("[+] Đã đóng popup thông báo.", flush=True)
         except Exception:
             pass
 
@@ -117,8 +127,7 @@ def run_registration(custom_password="Password123!"):
             EC.presence_of_element_located(
                 (
                     By.XPATH,
-                    "//*[contains(text(), '모두 동의') or contains(text(),"
-                    " '모두동의')]",
+                    "//*[contains(text(), '모두 동의') or contains(text(), '모두동의')]",
                 )
             )
         )
@@ -136,7 +145,7 @@ def run_registration(custom_password="Password123!"):
 
         # Step 9: Giải Turnstile Captcha nếu bị chuyển hướng sang Login
         if "login" in driver.current_url:
-            print("[+] Đang tiến hành giải Turnstile Captcha...")
+            print("[+] Đang tiến hành giải Turnstile Captcha...", flush=True)
             token = solve_cloudflare(driver.current_url, SITE_KEY_CLOUDFLARE)
             if token:
                 driver.execute_script(
@@ -144,15 +153,15 @@ def run_registration(custom_password="Password123!"):
                     f'="{token}";'
                 )
 
-        print(f"[+] Đăng ký thành công: {full_email}")
+        print(f"[+] Đăng ký thành công: {full_email}", flush=True)
         return full_email
 
     except Exception as e:
-        print(f"[-] Lỗi trong tiến trình đăng ký: {e}")
+        print(f"[-] Lỗi trong tiến trình đăng ký ({type(e).__name__}): {e}", flush=True)
         return None
 
     finally:
-        # Bắt buộc đóng Driver và giải phóng bộ nhớ Display để tránh nghẽn WebSocket/RAM
+        # Bắt buộc đóng Driver và giải phóng bộ nhớ Display để tránh nghẽn RAM
         time.sleep(2)
         if driver:
             try:

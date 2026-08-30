@@ -44,7 +44,7 @@ def save_account(email, password, status="Thành công"):
 # ==========================================
 with st.sidebar:
     st.title("⚙️ Cấu Hình Hệ Thống")
-    if st.button("Check Số Dư 2Captcha", use_container_width=True):
+    if st.button("Check Số Dư 2Captcha", width="stretch"):
         bal = get_2captcha_balance()
         if bal is not None:
             st.success(f"Số dư 2Captcha: **${bal:.3f}**")
@@ -69,7 +69,7 @@ with col_right:
         df_accounts = load_accounts()
         table_placeholder.dataframe(
             df_accounts, 
-            use_container_width=True, 
+            width="stretch", 
             height=450,
             hide_index=True
         )
@@ -91,11 +91,11 @@ with col_right:
             file_name="starnews_accounts.csv",
             mime="text/csv",
             key="static_download_btn",
-            use_container_width=True
+            width="stretch"
         )
         
     with btn_col2:
-        if st.button("Xóa bảng", type="primary", key="static_reset_btn", use_container_width=True):
+        if st.button("Xóa bảng", type="primary", key="static_reset_btn", width="stretch"):
             df_empty = pd.DataFrame(columns=["STT", "Email", "Password", "Thời gian tạo", "Trạng thái"])
             df_empty.to_csv(CSV_FILE, index=False)
             st.toast("Đã làm sạch dữ liệu cũ!")
@@ -143,7 +143,7 @@ with col_left:
             
             # Đặt nút Ngừng tiến trình ngay dưới thanh tiến trình
             stop_btn_placeholder = st.empty()
-            if stop_btn_placeholder.button("Ngừng Tiến Trình", key="stop_btn", type="secondary", use_container_width=True):
+            if stop_btn_placeholder.button("Ngừng Tiến Trình", key="stop_btn", type="secondary", width="stretch"):
                 st.session_state.stop_processing = True
 
             completed_count = 0
