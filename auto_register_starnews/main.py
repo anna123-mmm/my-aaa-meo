@@ -109,19 +109,38 @@ def run_registration(custom_password="Password123!"):
             raise Exception("Không nhận được mã OTP từ API Email!")
 
         # Step 5: Nhập OTP và xác nhận (인증확인)
+        print("[+] Đang tìm ô nhập mã OTP...", flush=True)
+
+        # Chờ ô OTP xuất hiện (thử nhiều trường hợp placeholder/type/name)
         otp_input = wait.until(
-            EC.presence_of_element_located(
-                (By.XPATH, "//input[contains(@placeholder, '6자리')]")
-            )
+            EC.presence_of_element_located((
+                By.XPATH,
+                "//input[contains(@placeholder, '6') or contains(@placeholder,"
+                " '인증') or @name='code' or @type='number']",
+            ))
         )
+
+        # Cuộn màn hình tới vị trí ô OTP để đảm bảo Selenium thấy element
+        driver.execute_script(
+            "arguments[0].scrollIntoView(true);", otp_input
+        )
+        time.sleep(0.5)
+
+        otp_input.clear()
         otp_input.send_keys(otp_code)
+        print(f"[+] Đã nhập OTP thành công: {otp_code}", flush=True)
         time.sleep(1)
 
-        btn_confirm_otp = driver.find_element(
-            By.XPATH, "//button[text()='인증확인' or contains(text(), '인증확인')]"
+        # Bấm nút xác nhận OTP (인증확인)
+        btn_confirm_otp = wait.until(
+            EC.element_to_be_clickable((
+                By.XPATH,
+                "//button[text()='인증확인' or contains(text(), '인증확인')]",
+            ))
         )
-        btn_confirm_otp.click()
-        time.sleep(1)
+        driver.execute_script("arguments[0].click();", btn_confirm_otp)
+        print("[+] Đã bấm xác nhận OTP.", flush=True)
+        time.sleep(1.5)
 
         # Step 6: Nhập Mật khẩu
         pass_inputs = wait.until(
